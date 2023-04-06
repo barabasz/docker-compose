@@ -1,39 +1,47 @@
 version: "3.9"
 
 volumes:
-  wordpress-mysql:
+
+  wordpress-mariadb:
   wordpress-www:
 
 services:
-  
-  #MySQL Database image
-  database:
-    image: mysql
-    container_name: mysql
-    restart: always
-    ports:
-      - "8001:80"
-    environment:
-      MYSQL_ROOT_PASSWORD: my_password_1234789
-      MYSQL_DATABASE: my_wp_database
-      MYSQL_USER: my_wp_user
-      MYSQL_PASSWORD: my_wp_user_password
-    volumes:
-      - wordpress-mysql:/var/lib/mysql
 
-  #WordPress image based on Apache
+  mariadb:
+    image: mariadb
+    command: '--default-authentication-plugin=mysql_native_password'
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=somewordpress
+      - MYSQL_DATABASE=wordpress
+      - MYSQL_USER=wordpress
+      - MYSQL_PASSWORD=wordpress
+    expose:
+      - 3306
+      - 33060
+    volumes:
+      - wordpress-mariadb:/var/lib/mysql
+
+  redis:
+      image: redis:alpine
+      ports:
+        - "6379:6379"
+      restart: always
+      expose:
+        - "6379"
+
   wordpress:
     depends_on:
-      - database
+      - mariadb
     image: wordpress:latest
-    container_name: wordpress
     restart: always
     ports:
       - "8001:80"
     environment:
-      WORDPRESS_DB_HOST: database:3306
-      WORDPRESS_DB_USER: my_wp_user
-      WORDPRESS_DB_PASSWORD: my_wp_user_password
-      WORDPRESS_DB_NAME: my_wp_database
+      - WORDPRESS_DB_HOST=mariadb
+      - WORDPRESS_DB_USER=wordpress
+      - WORDPRESS_DB_PASSWORD=wordpress
+      - WORDPRESS_DB_NAME=wordpress
+
     volumes:
       - wordpress-www:/var/www/html
